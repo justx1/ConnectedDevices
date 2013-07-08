@@ -31,14 +31,12 @@ topic = "sensors/temperature"
 # Open Connection
 sp = SerialPort.new(serial_port, baud_rate, data_bits, stop_bits, parity)
 
-# Read forever
-while true do
-	while (i = sp.gets.chomp) do
-		MQTT::Client.connect(mqtt_host) do |c|
+# Read and publish forever
+MQTT::Client.connect(mqtt_host) do |c|
+	while true do
+		while (i = sp.gets.chomp) do
 			c.publish(topic, i)
 		end
-		#puts i
-		#puts i.class #String
 	end
 end
  
