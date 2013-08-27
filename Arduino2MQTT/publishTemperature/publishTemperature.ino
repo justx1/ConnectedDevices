@@ -7,12 +7,12 @@
 #include <Ethernet.h>
 #include <PubSubClient.h>
 
-// Set MAC address. Look at bottom of the shield. Old Arduino Ethernet Shields or clones may not have a dedicated MAC address. Set any hex values here.
+// Set MAC address. Look for it on a sticket at the bottom of the shield. Old Arduino Ethernet Shields or clones may not have a dedicated MAC address. Set any hex values here.
 byte mac[]    = {  0xFE, 0xED, 0xDE, 0xAD, 0xBE, 0xEF };
 // IP address of MQTT broker
-byte broker[] = { 172, 16, 0, 2 };
-// Static IP address of Ethernet shield. Leave empty for DHCP.
-byte ip[]     = { };
+byte broker[] = { 192, 168, 1, 115 };
+// Static IP address of Ethernet shield. Comment out for DHCP. See note below at begin(mac).
+//byte ip[]     = { 192, 168, 1, 1 };
 
 void callback(char* topic, byte* payload, unsigned int length) {
   // handle message arrived
@@ -23,7 +23,8 @@ PubSubClient client(broker, 1883, callback, ethClient);
 
 void setup()
 {
-  Ethernet.begin(mac, ip);
+//  Ethernet.begin(mac, ip); // Uncomment in case of static IP
+  Ethernet.begin(mac);
   if (client.connect("arduinoClient")) {
     client.publish("outTopic","hello world");
     client.subscribe("inTopic");
