@@ -7,6 +7,13 @@
 #include <Ethernet.h>
 #include <PubSubClient.h>
 
+// Pins
+const int temperaturePin = A0;
+
+// Variables
+float voltage, degreesC;
+
+// Network Settings
 // Set MAC address. Look for it on a sticket at the bottom of the shield. Old Arduino Ethernet Shields or clones may not have a dedicated MAC address. Set any hex values here.
 byte mac[]    = {  0xFE, 0xED, 0xDE, 0xAD, 0xBE, 0xEF };
 // IP address of MQTT broker
@@ -26,8 +33,8 @@ void setup()
 //  Ethernet.begin(mac, ip); // Uncomment in case of static IP
   Ethernet.begin(mac);
   if (client.connect("arduinoClient")) {
-    client.publish("outTopic","hello world");
-    client.subscribe("inTopic");
+    client.publish("sensors/temperature","21.7");
+    // client.subscribe("inTopic"); // No need to subscribe to topic (yet)
   }
 }
 
@@ -41,16 +48,7 @@ void loop()
 
 
 
-// Pins
-const int temperaturePin = A0;
 
-// Variables
-float voltage, degreesC;
-
-// Update these with values suitable for your network.
-byte mac[]    = {  0xDE, 0xED, 0xBA, 0xFE, 0xFE, 0xED };
-byte server[] = { 192, 168, 1, 115 };
-//byte ip[]     = { 172, 16, 0, 100 };
 
 void callback(char* topic, byte* payload, unsigned int length) {
   // handle message arrived
