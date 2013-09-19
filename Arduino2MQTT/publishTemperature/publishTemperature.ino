@@ -3,6 +3,9 @@
 // MQTT Arduino PubSubClient by Nick O'Leary
 // http://knolleary.net/arduino-client-for-mqtt/
 
+// To Do: 
+// 1. Automatic reconnect attempt of arduino client if connection to MQTT server breaks (e.g. if server restarts)
+
 #include <SPI.h>
 #include <Ethernet.h>
 #include <PubSubClient.h>
@@ -51,7 +54,7 @@ void setup()
   //  Ethernet.begin(mac, ip); // Uncomment in case of static IP
   Ethernet.begin(mac);
   if (client.connect("arduinoClient")) {
-    client.publish("outTopic","hello world!");
+    client.publish("SFO/Arduino/Temperature","Hello World!");
     client.subscribe("inTopic");
   }
 }
@@ -68,10 +71,10 @@ void loop()
   if (temp != oldTemp) {
     len = sprintf (MQTTbuffer, "Temp: %s , Light: %d ", tempstr);
     Serial.println(MQTTbuffer);
-    client.publish("outTopic",MQTTbuffer);
+    client.publish("SFO/Arduino/Temperature",MQTTbuffer);
     oldTemp = temp;
   }
-  delay(1000); 
+  delay(10000); 
 }
 
 
