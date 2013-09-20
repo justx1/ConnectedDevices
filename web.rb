@@ -2,6 +2,36 @@ require 'sinatra'
 require 'tempodb'
 
 get '/' do
+  request_start = Time.now
+
+  # setup the Tempo client
+  api_key = ENV['TEMPODB_API_KEY']
+  api_secret = ENV['TEMPODB_API_SECRET']
+  api_host = ENV['TEMPODB_API_HOST']
+  api_port = Integer(ENV['TEMPODB_API_PORT'])
+  api_secure = ENV['TEMPODB_API_SECURE'] == "False" ? false : true
+
+  client = TempoDB::Client.new( api_key, api_secret, api_host, api_port, api_secure )
+
+  out = ""
+
+  # read all series from TempoDB for user, and track how long it takes
+  read_start = Time.now
+  series = client.get_series()
+  read_end = Time.now
+
+  # build string of JSON representation of user series
+  series.each{ |series| out += series.to_json + "<br/>"  }
+
+  request_end = Time.now
+
+  # write to TempoDB the page load speed, and series read speed
+  client.write_bulk( Time.now, [ {'key'=>'heroku-page-load-speed', 'v'=>request_end-request_start}, {'key'=>'heroku-tempodb-read-speed', 'v'=>read_end-read_start} ] )
+  out
+end
+
+=begin
+get '/' do
 	"Hello, world1"
 end
 
@@ -53,3 +83,4 @@ get '/data/?' do
 
 	response_data.to_json
 end
+=end
