@@ -2,7 +2,7 @@ require 'sinatra'
 require 'tempodb'
 
 get '/' do
-	"Hello, world"
+	"Hello, world1"
 end
 
 get '/data/?' do
@@ -12,7 +12,7 @@ get '/data/?' do
 	return [].to_json if (params[:stop].nil? or Time.parse(params[:stop]).nil?)
 	return [].to_json if (params[:step].nil?)
 
-	client = TempoDB::Client.new(API_KEY, API_SECRET)
+	client = TempoDB::Client.new(ec6b67794d4d43a1b364181fea270d19, a92f52c4f85b45db9d26f95a9e09cf26)
 
 	start = Time.parse params[:start]
 	stop  = Time.parse params[:stop]
