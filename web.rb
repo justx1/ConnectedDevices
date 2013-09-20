@@ -1,7 +1,39 @@
 require 'sinatra'
 require 'tempodb'
+require 'mqtt'
+
+# Create a hash with the connection parameters from the URL
+uri = URI.parse ENV['CLOUDMQTT_URL'] || 'mqtt://localhost:1883'
+conn_opts = {
+	remote_host: uri.host,
+	remote_port: uri.port,
+	username: uri.user,
+	password: uri.password,
+}
+
+Thread.new do
+	#MQTT::Client.connect(conn_opts) do |c|
+	MQTT::Client.connect('localhost') do |c|
+		# The block will be called when you messages arrive to the topic
+		c.get('test') do |topic, message|
+			puts "#{topic}: #{message}"
+			c.publish('test', 'Fucker')
+			sleep 1
+		end
+	end
+end
 
 get '/' do
+	"Hello, world. This is the TempoDB data API"
+	#MQTT::Client.connect(conn_opts) do |c|
+	MQTT::Client.connect('localhost') do |c|		
+		# publish a message to the topic 'test'
+		c.publish('test', 'Fucker2')
+	end
+end
+
+=begin
+get '/data/?' do
   request_start = Time.now
 
   # setup the Tempo client
@@ -30,7 +62,7 @@ get '/' do
   out
 end
 
-=begin
+
 get '/' do
 	"Hello, world1"
 end
