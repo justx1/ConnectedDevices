@@ -12,7 +12,14 @@ get '/data/?' do
 	return [].to_json if (params[:stop].nil? or Time.parse(params[:stop]).nil?)
 	return [].to_json if (params[:step].nil?)
 
-	client = TempoDB::Client.new(ec6b67794d4d43a1b364181fea270d19, a92f52c4f85b45db9d26f95a9e09cf26)
+	# setup the Tempo client
+	api_key = ENV['TEMPODB_API_KEY']
+	api_secret = ENV['TEMPODB_API_SECRET']
+	api_host = ENV['TEMPODB_API_HOST']
+	api_port = Integer(ENV['TEMPODB_API_PORT'])
+	api_secure = ENV['TEMPODB_API_SECURE'] == "False" ? false : true
+
+	client = TempoDB::Client.new( api_key, api_secret, api_host, api_port, api_secure )
 
 	start = Time.parse params[:start]
 	stop  = Time.parse params[:stop]
