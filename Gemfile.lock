@@ -1,10 +1,15 @@
 GEM
   remote: https://rubygems.org/
   specs:
+    httpclient (2.3.4.1)
+    json (1.8.0)
     rack (1.5.2)
     sinatra (1.1.0)
       rack (~> 1.1)
       tilt (~> 1.1)
+    tempodb (0.6.1)
+      httpclient
+      json
     tilt (1.4.1)
 
 PLATFORMS
@@ -12,3 +17,4 @@ PLATFORMS
 
 DEPENDENCIES
   sinatra (= 1.1.0)
+  tempodb

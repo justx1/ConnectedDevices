@@ -1,4 +1,5 @@
 require 'sinatra'
+require 'tempodb'
 
 get '/' do
 	"Hello, world"
