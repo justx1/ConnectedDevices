@@ -32,7 +32,7 @@ get '/' do
 	end
 end
 
-=begin
+
 get '/data/?' do
   request_start = Time.now
 
@@ -62,6 +62,7 @@ get '/data/?' do
   out
 end
 
+=begin
 
 get '/' do
 	"Hello, world1"
