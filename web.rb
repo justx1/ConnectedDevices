@@ -4,12 +4,24 @@ require 'mqtt'
 
 # Create a hash with the connection parameters from the URL
 uri = URI.parse ENV['CLOUDMQTT_URL'] || 'mqtt://localhost:1883'
-conn_opts = {
+mqtt_conn_opts = {
 	remote_host: uri.host,
 	remote_port: uri.port,
 	username: uri.user,
 	password: uri.password,
 }
+
+
+get '/' do
+	"Hello, world. This is the TempoDB data API"
+	MQTT::Client.connect(mqtt_conn_opts) do |c|
+	#MQTT::Client.connect('localhost') do |c|		
+		# publish a message to the topic 'test'
+		c.publish('test', 'Fucker4')
+	end
+end
+
+=begin
 
 Thread.new do
 	#MQTT::Client.connect(conn_opts) do |c|
@@ -22,17 +34,6 @@ Thread.new do
 		end
 	end
 end
-
-get '/' do
-	"Hello, world. This is the TempoDB data API"
-	#MQTT::Client.connect(conn_opts) do |c|
-	MQTT::Client.connect('localhost') do |c|		
-		# publish a message to the topic 'test'
-		c.publish('test', 'Fucker2')
-	end
-end
-
-=begin
 
 get '/data/?' do
   request_start = Time.now
