@@ -14,7 +14,7 @@
 
 // Pins
 //
-const int tempPin = 0;
+const int tempPinIn = 0; // Analog 0 is the input pin
 
 // Variables
 //
@@ -26,11 +26,11 @@ char buffer[10];
 // Network Settings
 //
 // Set MAC address of ethernet shield. Look for it on a sticket at the bottom of the shield. Old Arduino Ethernet Shields or clones may not have a dedicated MAC address. Set any hex values here.
-byte mac[] = {  0xFE, 0xED, 0xDE, 0xAD, 0xBE, 0xEF };
+byte MAC_ADDRESS[] = {  0xFE, 0xED, 0xDE, 0xAD, 0xBE, 0xEF };
 // Set IP address of MQTT server
-byte server[] = { 192, 168, 1, 115 };
+byte SERVER[] = { 192, 168, 1, 115 };
 // Set static IP address of Ethernet shield. Comment out for DHCP. See note below at begin(mac).
-//byte ip[]     = { 192, 168, 1, 1 };
+//byte IP[]     = { 192, 168, 1, 1 };
 
 void callback(char* topic, byte* payload, unsigned int length) {
   // handle message arrived
@@ -54,14 +54,16 @@ void setup()
   Ethernet.begin(mac);
   if (client.connect("arduinoClient")) {
     // client.publish("SFO/Arduino/Inside/Temperature","Hello World!");
+    client.publish("SFO/Arduino/Inside/Temperature",tempC);    
     // client.subscribe("inTopic");
   }
 }
 
 void loop()
 {
-  client.loop();
   tempC = dtostrf(((((analogRead(tempPin) * 5.0) / 1024) - 0.5) * 100), 5, 2, buffer); // TMP36 sensor calibration
+  Serial.println(tempC);
   client.publish("SFO/Arduino/Inside/Temperature",tempC);
+  client.loop();
   delay(60000); 
 }
