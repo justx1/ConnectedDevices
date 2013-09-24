@@ -21,7 +21,7 @@ api_secure = ENV['TEMPODB_API_SECURE'] == "False" ? false : true
 
 # Redirect to index.html that loads D3/Cubism
 get '/' do
-	"Hello, world. This is the TempoDB data API"
+	redirect '/index.html'
 end
 
 # API to provide data series to D3/Cubism
@@ -90,6 +90,10 @@ end
 
 # Retrieve dataset from TempoDB through ReST API (get key/secret through CLI: heroku config):
 # test dataset: curl -u *key*:*secret* https://api.tempo-db.com/v1/series/key/sfo%2Farduino%2Ftemperature%2Finside/data/?start=2013-09-22T07%3A00%3A00.000Z&end=2013-09-23T06%3A59%3A59.000Z
+
+# Test the data API
+# http://localhost:5000/data/?start=20130810&stop=20130923&step=60000
+# http://***.herokuapp.com/data/?start=20130810&stop=20130925&step=60000
 
 #publish to MQTT
 	MQTT::Client.connect(mqtt_conn_opts) do |c|

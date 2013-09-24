@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>Arduino - CloudMQTT - TempoDB</title>
+<style>
+
+@import url(style.css);
+
+</style>
+<body>
+<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+<script src="http://square.github.io/cubism/cubism.v1.js" charset="utf-8"></script>
+<script>
+
+var context = cubism.context()
+    .serverDelay(1 * 60 * 1000) // Allow 1 mins server delay
+    .step(1 * 60 * 1000) // Every 1 mins
+    .size(1440),
+    primary = temperature();
+    //secondary = primary.shift(- 24 * 60 * 60 * 1000);
+
+d3.select("body").selectAll(".axis")
+    .data(["top", "bottom"])
+  .enter().append("div")
+    .attr("class", function(d) { return d + " axis"; })
+    .each(function(d) { d3.select(this).call(context.axis().ticks(12).orient(d)); });
+
+d3.select("body").append("div")
+    .attr("class", "rule")
+    .call(context.rule());
+
+d3.select("body").selectAll(".horizon")
+    .data(d3.range(1, 10).map(temperature))
+  .enter().insert("div", ".bottom")
+    .attr("class", "horizon")
+    .call(context.horizon().extent([-10, 10]));
+
+context.on("focus", function(i) {
+  d3.selectAll(".value").style("right", i == null ? null : context.size() - i + "px");
+});
+
+// Replace this with context.graphite and graphite.metric!
+function random(x) {
+  var value = 0,
+      values = [],
+      i = 0,
+      last;
+  return context.metric(function(start, stop, step, callback) {
+    start = +start, stop = +stop;
+    if (isNaN(last)) last = start;
+    while (last < stop) {
+      last += step;
+      value = Math.max(-10, Math.min(10, value + .8 * Math.random() - .4 + .2 * Math.cos(i += x * .02)));
+      values.push(value);
+    }
+    callback(null, values = values.slice((start - stop) / step));
+  }, x);
+}
+
+function temperature() {
+    return context.metric(function(start, stop, step, callback) {
+        d3.json("/data/?start=" + start.toISOString() +
+            "&stop=" + stop.toISOString() +
+            "&step=" + step, function(data) {
+                if(!data) return callback(new Error("unable to load data"));
+
+                // Need to deal with possible gaps in the data
+                var plotData = [];
+                var recentTS = new Date(start);
+                var fillInVal = data[0].temperature;
+                data.forEach(function(elt, idx, array) {
+                  while(recentTS < elt["ts"]) {
+                    // Simulate a point
+                    plotData.push(fillInVal);
+                    recentTS.setMilliseconds(recentTS.getMilliseconds() + step);
+                  }
+                  // Add the received data point
+                  plotData.push(elt["temperature"]);
+                  fillInVal = elt["temperature"];
+                  recentTS.setMilliseconds(recentTS.getMilliseconds() + step);
+                });
+
+                // Back-fill if required
+                while(recentTS < stop) {
+                  plotData.push(fillInVal);
+                  recentTS.setMilliseconds(recentTS.getMilliseconds() + step);
+                }
+
+                // Send the data back to be plotted
+                callback(null, plotData );
+            });
+    });
+}
+
+</script>
