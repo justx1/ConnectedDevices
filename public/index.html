@@ -72,7 +72,9 @@ d3.select("body").selectAll(".horizon")
     .data([primary])    
   .enter().insert("div", ".bottom")
     .attr("class", "horizon")
-    .call(context.horizon().extent([-10, 10]));
+    .call(context.horizon().extent([10, 25])
+      .title("SFO/Arduino/Inside/Temperature")
+      .height(90));
 
 context.on("focus", function(i) {
   d3.selectAll(".value").style("right", i == null ? null : context.size() - i + "px");
