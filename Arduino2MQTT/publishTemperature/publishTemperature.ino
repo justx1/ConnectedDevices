@@ -4,7 +4,7 @@
 // http://knolleary.net/arduino-client-for-mqtt/
 
 // To Do: 
-// 1. Automatic reconnect attempt of arduino client if connection to MQTT server breaks (e.g. if server restarts)
+// 1. Automatic reconnect attempt of arduino client if connection to MQTT server is lost (e.g. if server restarts)
 
 #include <SPI.h>
 #include <Ethernet.h>
@@ -14,15 +14,14 @@
 
 // Pins
 //
-const int tempPin = A0;
+const int tempPin = 0;
 
 // Variables
 //
-float temp = 0;
-float oldTemp = 0;
-int len;
-char tempstr[7];
-char MQTTbuffer[120];
+char* tempC;
+char buffer[10];
+
+
 
 // Network Settings
 //
@@ -54,60 +53,15 @@ void setup()
   //  Ethernet.begin(mac, ip); // Uncomment in case of static IP
   Ethernet.begin(mac);
   if (client.connect("arduinoClient")) {
-    client.publish("SFO/Arduino/Temperature","Hello World!");
-    client.subscribe("inTopic");
+    // client.publish("SFO/Arduino/Inside/Temperature","Hello World!");
+    // client.subscribe("inTopic");
   }
 }
 
 void loop()
 {
   client.loop();
-  temp = analogRead(tempPin);
-  temp *= 5;
-  temp /= 1023;
-  temp -= 0.5;
-  temp *= 100;
-  dtostrf(temp, 6, 2, tempstr);
-  if (temp != oldTemp) {
-    len = sprintf (MQTTbuffer, "Temp: %s , Light: %d ", tempstr);
-    Serial.println(MQTTbuffer);
-    client.publish("SFO/Arduino/Temperature",MQTTbuffer);
-    oldTemp = temp;
-  }
-  delay(10000); 
+  tempC = dtostrf(((((analogRead(tempPin) * 5.0) / 1024) - 0.5) * 100), 5, 2, buffer); // TMP36 sensor calibration
+  client.publish("SFO/Arduino/Inside/Temperature",tempC);
+  delay(60000); 
 }
-
-
-/*
-
-
-
-
-
-void callback(char* topic, byte* payload, unsigned int length) {
-  // handle message arrived
-}
-
-EthernetClient ethClient;
-PubSubClient client(server, 1883, callback, ethClient);
-
-void setup()
-{
-  Ethernet.begin(mac);
-  if (client.connect("arduinoClient")) {
-    client.publish("outTopic","hello world");
-    //client.subscribe("inTopic");
-  }
-  Serial.begin(9600);
-  pinMode(temperaturePin, INPUT);
-}
-
-void loop()
-{
-  client.loop();
-//  printTemperature(temperaturePin);
-  client.publish("outTopic",analogRead(temperaturPin));
-}
-
-
-*/
