@@ -30,29 +30,20 @@ byte MQTT_SERVER[] = { 192, 168, 1, 115 };
 // #define MQTT_SERVER "q.sfo.example.com"
 
 // Set static IP address of Ethernet shield. Comment out for DHCP. See note below at begin(mac).
-//byte STATIC_IP[]     = { 192, 168, 1, 1 };
-
-// defines and variable for sensor/control mode
-//#define MODE_OFF    0  // not sensing light, LED off
-//#define MODE_ON     1  // not sensing light, LED on
-//#define MODE_SENSE  2  // sensing light, LED controlled by software
-//int senseMode = 0;
+// byte STATIC_IP[]     = { 192, 168, 1, 1 };
 
 EthernetClient ethClient;
 PubSubClient client(MQTT_SERVER, 1883, callback, ethClient);
 
 void setup()
-{
-  // initialize the digital pin as an output.
-  pinMode(ledPinOut, OUTPUT);
-  
-  // init serial link for debugging
+{  
+  // Initilize serial link for debugging
   Serial.begin(9600);
   
   if (Ethernet.begin(MAC_ADDRESS) == 0)
   {
-      Serial.println("Failed to configure Ethernet using DHCP");
-      return;
+    Serial.println("Failed to configure Ethernet using DHCP");
+    return;
   }
 }
 
@@ -60,98 +51,26 @@ void loop()
 {
   if (!client.connected())
   {
-      // clientID, username, MD5 encoded password
-      //client.connect("arduino-mqtt", "john@m2m.io", "00000000000000000000000000000");
-      client.connect("sfo-arduino");
-      client.publish("sfo/arduino/alive", "I'm alive!");
-      client.subscribe("sfo/arduino/switch");
+    //client.connect("clientID", "mqtt_username", "mqtt_password");
+    client.connect("sfo-arduino");
+    client.publish("sfo/arduino/alive", "I'm alive!");
   }
   
   tempC = dtostrf(((((analogRead(tempPinIn) * 5.0) / 1024) - 0.5) * 100), 5, 2, message_buffer); // TMP36 sensor calibration
   //Serial.println(tempC);
-  //client.publish("SFO/Arduino/Inside/Temperature",tempC);
 
-  //int tempRead = analogRead(tempPinIn);
-
-  // publish temperature reading every 5 seconds
-      if (millis() > (time + 5000)) {
-        time = millis();
-        //String pubString = "{\"report\":{\"light\": \"" + String(lightRead) + "\"}}";
-        //pubString.toCharArray(message_buff, pubString.length()+1);
-        //Serial.println(pubString);
-        //client.publish("io.m2m/arduino/lightsensor", message_buff);
-        client.publish("SFO/Arduino/Inside/Temperature",tempC);
-      }  
-
-  /*
-  switch (senseMode) {
-    case MODE_OFF:
-      // light should be off
-      digitalWrite(ledPin, LOW);
-      break;
-    case MODE_ON:
-      // light should be on
-      digitalWrite(ledPin, HIGH);
-      break;
-    case MODE_SENSE:
-      // light is adaptive to light sensor
-      
-      // read from light sensor (photocell)
-      int lightRead = analogRead(lightPinIn);
-
-      // if there is light in the room, turn off LED
-      // else, if it is "dark", turn it on
-      // scale of light in this circit is roughly 0 - 900
-      // 500 is a "magic number" for "dark"
-      if (lightRead > 500) {
-        digitalWrite(ledPin, LOW);
-      } else {
-        digitalWrite(ledPin, HIGH);
-      }
-      
-      // publish light reading every 5 seconds
-      if (millis() > (time + 5000)) {
-        time = millis();
-        String pubString = "{\"report\":{\"light\": \"" + String(lightRead) + "\"}}";
-        pubString.toCharArray(message_buff, pubString.length()+1);
-        //Serial.println(pubString);
-        client.publish("io.m2m/arduino/lightsensor", message_buff);
-      }  
-  }
-  */
-
-
-  // MQTT client loop processing
-  client.loop();
+  // Publish sensor reading every X milliseconds
+    if (millis() > (time + 60000)) {
+      time = millis();
+      client.publish("SFO/Arduino/Inside/Temperature",tempC);
+    }
+    
+    // MQTT client loop processing
+    client.loop();
 }
 
-// handles message arrived on subscribed topic(s)
+// Handles messages arrived on subscribed topic(s)
 void callback(char* topic, byte* payload, unsigned int length) {
-
-  /*
-  int i = 0;
-
-  //Serial.println("Message arrived:  topic: " + String(topic));
-  //Serial.println("Length: " + String(length,DEC));
-  
-  // create character buffer with ending null terminator (string)
-  for(i=0; i<length; i++) {
-    message_buff[i] = payload[i];
-  }
-  message_buff[i] = '\0';
-  
-  String msgString = String(message_buff);
-  
-  //Serial.println("Payload: " + msgString);
-  
-  if (msgString.equals("{\"command\":{\"lightmode\": \"OFF\"}}")) {
-    senseMode = MODE_OFF;
-  } else if (msgString.equals("{\"command\":{\"lightmode\": \"ON\"}}")) {
-    senseMode = MODE_ON;
-  } else if (msgString.equals("{\"command\":{\"lightmode\": \"SENSE\"}}")) {
-    senseMode = MODE_SENSE;
-  }
-  */
 }
 
 // To Do: 
