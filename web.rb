@@ -41,7 +41,7 @@ get '/data/?' do
 	step = params[:step].to_i
 	# We'll just measure it in minutes
 	step_string = "#{step/60000}min"
-	dataSet = dataClient.read(start, stop, keys: keys, interval: step_string, function: "mean")
+	dataSet = dataClient.read(start, stop, keys: keys, interval: step_string, function: "mean", tz: "America/Los_Angeles")
 	#dataSet.inspect
 
 	 # Map the first series to temperature data points
@@ -58,9 +58,7 @@ Thread.new do
 	MQTT::Client.connect(mqtt_conn_opts) do |c|
 		# The block will be called when new messages arrive to the topic
 		c.get('#') do |topic,message|
-			puts "#{topic}: #{message}"
-			puts topic	
-			puts message
+			# puts "#{topic}: #{message}"
 			data = [
 				TempoDB::DataPoint.new(Time.now.utc, message.to_f)
 			]

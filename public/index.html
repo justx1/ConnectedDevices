@@ -18,6 +18,45 @@ var context = cubism.context()
     primary = temperature();
     //secondary = primary.shift(- 24 * 60 * 60 * 1000);
 
+/*
+
+d3.select("#chart").call(function(div) {
+    div.append("div")
+      .attr("class", "axis")
+      .call(context.axis().orient("top"));
+    
+    div.selectAll(".horizon")
+      .data([primary])
+      .enter().append("div")
+      .attr("class", "horizon")
+      .call(context.horizon()
+        .height(120)
+        .format(d3.format(".2f"))
+        .title("Temperature"));
+
+    div.selectAll(".comparison")
+      .data([[primary, secondary]])
+      .enter().append("div")
+      .attr("class", "comparison")
+      .call(context.comparison()
+        .height(60)
+        .formatChange(d3.format(".1f%"))
+        .title("Daily Change"));
+
+    div.append("div")
+      .attr("class", "rule")
+      .call(context.rule());
+});
+
+
+context.on("focus", function(i) {
+    format = d3.format(".1f");
+    d3.selectAll(".horizon .value").style("right", i === null ? null : context.size() - i + "px")
+      .text(format(primary.valueAt(Math.floor(i))) + "\u00B0C");
+});
+
+*/
+
 d3.select("body").selectAll(".axis")
     .data(["top", "bottom"])
   .enter().append("div")
@@ -29,7 +68,8 @@ d3.select("body").append("div")
     .call(context.rule());
 
 d3.select("body").selectAll(".horizon")
-    .data(d3.range(1, 10).map(temperature))
+    //.data(d3.range(1, 10).map(temperature))
+    .data([primary])    
   .enter().insert("div", ".bottom")
     .attr("class", "horizon")
     .call(context.horizon().extent([-10, 10]));
@@ -37,6 +77,8 @@ d3.select("body").selectAll(".horizon")
 context.on("focus", function(i) {
   d3.selectAll(".value").style("right", i == null ? null : context.size() - i + "px");
 });
+
+/*
 
 // Replace this with context.graphite and graphite.metric!
 function random(x) {
@@ -55,6 +97,8 @@ function random(x) {
     callback(null, values = values.slice((start - stop) / step));
   }, x);
 }
+
+*/
 
 function temperature() {
     return context.metric(function(start, stop, step, callback) {
