@@ -2,7 +2,8 @@ require 'sinatra'
 require 'tempodb'
 require 'mqtt'
 
-# Create a hash with the connection parameters from the URL
+# CloudMQTT connection parameters
+# Creates a hash with the connection parameters from the cloudmqtt URL in .env, else from the localhost URL
 uri = URI.parse ENV['CLOUDMQTT_URL'] || 'mqtt://localhost:1883'
 mqtt_conn_opts = {
 	remote_host: uri.host,
@@ -11,64 +12,113 @@ mqtt_conn_opts = {
 	password: uri.password,
 }
 
+# TempoDB connection parameters from the TempoDB parameters in .env
+api_key = ENV['TEMPODB_API_KEY']
+api_secret = ENV['TEMPODB_API_SECRET']
+api_host = ENV['TEMPODB_API_HOST']
+api_port = Integer(ENV['TEMPODB_API_PORT'])
+api_secure = ENV['TEMPODB_API_SECURE'] == "False" ? false : true
+
+
+# test with mosquitto_sub -h broker.cloudmqtt.com -p 10858 -t test -u nmtbetoo -P m_VLz3-9Ni5O
+# test with mosquitto_sub -h localhost -p 1883 -t test
 
 get '/' do
 	"Hello, world. This is the TempoDB data API"
 	MQTT::Client.connect(mqtt_conn_opts) do |c|
-	#MQTT::Client.connect('localhost') do |c|		
 		# publish a message to the topic 'test'
-		c.publish('test', 'Fucker4')
+		c.publish('test', "The time is: #{Time.now}")
 	end
 end
 
-=begin
-
 Thread.new do
-	#MQTT::Client.connect(conn_opts) do |c|
-	MQTT::Client.connect('localhost') do |c|
-		# The block will be called when you messages arrive to the topic
-		c.get('test') do |topic, message|
+	client1 = TempoDB::Client.new( api_key, api_secret, api_host, api_port, api_secure )
+	MQTT::Client.connect(mqtt_conn_opts) do |c|
+		# The block will be called when new messages arrive to the topic
+		c.get('#') do |topic,message|
 			puts "#{topic}: #{message}"
-			c.publish('test', 'Fucker')
+			puts topic	
+			puts message
+			data = [
+				TempoDB::DataPoint.new(Time.now.utc, message.to_f)
+			]
+			client1.write_key(topic, data)
 			sleep 1
 		end
 	end
 end
 
 get '/data/?' do
-  request_start = Time.now
+	content_type :json
 
-  # setup the Tempo client
-  api_key = ENV['TEMPODB_API_KEY']
-  api_secret = ENV['TEMPODB_API_SECRET']
-  api_host = ENV['TEMPODB_API_HOST']
-  api_port = Integer(ENV['TEMPODB_API_PORT'])
-  api_secure = ENV['TEMPODB_API_SECURE'] == "False" ? false : true
+	return [].to_json if (params[:start].nil? or Time.parse(params[:start]).nil?)
+	return [].to_json if (params[:stop].nil? or Time.parse(params[:stop]).nil?)
+	return [].to_json if (params[:step].nil?)
 
-  client = TempoDB::Client.new( api_key, api_secret, api_host, api_port, api_secure )
+	client2 = TempoDB::Client.new( api_key, api_secret, api_host, api_port, api_secure )
 
-  out = ""
+	start = Time.parse params[:start]
+	stop  = Time.parse params[:stop]
+	keys  = ["sfo/arduino/temperature/outside"]
+	# Calculate the correct rollup
+	step = params[:step].to_i
+	# We'll just measure it in minutes
+	step_string = "#{step/60000}min"
+	data2 = client2.read(start, stop, keys: keys, interval: step_string, function: "mean")
+	data = data.first.data
+	data2.to_json
 
-  # read all series from TempoDB for user, and track how long it takes
-  read_start = Time.now
-  series = client.get_series()
-  read_end = Time.now
+end
 
-  # build string of JSON representation of user series
-  series.each{ |series| out += series.to_json + "<br/>"  }
+=begin
 
-  request_end = Time.now
+get '/data/?' do
 
-  # write to TempoDB the page load speed, and series read speed
-  client.write_bulk( Time.now, [ {'key'=>'heroku-page-load-speed', 'v'=>request_end-request_start}, {'key'=>'heroku-tempodb-read-speed', 'v'=>read_end-read_start} ] )
-  out
+	client = TempoDB::Client.new( api_key, api_secret, api_host, api_port, api_secure )
+
+	out = ""
+
+	start=Time.utc(2000, 1, 1)
+	stop=Time.utc(2013, 9, 23)
+	series_data = client.read_id("c00c57b643f84e94a4d67191c3e758f9", start, stop)
+	puts series_data.first.data
+	puts series_data.to_json
+	#data.each_key { |key| out += data.to_json + "<br/>"  }
+	#data.each{ |data| out += data.to_json + "<br/>"  }
+	#response_data = []
+	# We need to remove any inconsistencies
+	#data.each_with_index do |val, index|
+		# Add this datapoint
+	#	response_data.push( { value: val.value } )
+	#end
+	series_data.to_json
+
+
+
+	# read all series from TempoDB for user, and track how long it takes
+	read_start = Time.now
+	series = client.get_series()
+	read_end = Time.now
+
+	# build string of JSON representation of user series
+	#series.each{ |series| out += series.to_json + "<br/>"  }
+
+	request_end = Time.now
+
+	# write to TempoDB the page load speed, and series read speed
+data = [
+    TempoDB::DataPoint.new(Time.now.utc, 1.123),
+    TempoDB::DataPoint.new(Time.utc(2012, 1, 1, 1, 1, 0), 1.874),
+    TempoDB::DataPoint.new(Time.utc(2012, 1, 1, 1, 2, 0), 21.52)
+]
+
+client.write_key("sfo/arduino/temperature/inside", data)
+	#client.write_key( {'t'=>Time.now ,'key'=>'sfo/arduino/temperature/inside', 'v'=>request_end-request_start} )
+	#client.write_bulk( Time.now, [ {'key'=>'heroku-page-load-speed', 'v'=>request_end-request_start}, {'key'=>'heroku-tempodb-read-speed', 'v'=>read_end-read_start} ] )
+	out
 end
 
 
-
-get '/' do
-	"Hello, world1"
-end
 
 get '/data/?' do
 	content_type :json
