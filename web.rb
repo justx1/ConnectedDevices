@@ -49,7 +49,6 @@ get '/data/?' do
 	 # read TempoDB docu, as this will set attributes and tags automatically; then parse it out from dataSet generically! 
 	response_data = dataSet.first.data.map{ |dp| {ts: dp.ts, value: dp.value, temperature: dp.value } }
 	response_data.to_json
-
 end
 
 # Listener that is subscribed to MQTT broker and upon receiving a new message, writes key:value into TempoDB
