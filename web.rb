@@ -36,7 +36,7 @@ get '/data/?' do
 
 	start = Time.parse params[:start]
 	stop  = Time.parse params[:stop]
-	keys  = ["sfo/arduino/temperature/outside"]
+	keys  = ["sfo/arduino/inside/temperature"]
 	# Calculate the correct rollup
 	step = params[:step].to_i
 	# We'll just measure it in minutes
@@ -49,7 +49,6 @@ get '/data/?' do
 	 # read TempoDB docu, as this will set attributes and tags automatically; then parse it out from dataSet generically! 
 	response_data = dataSet.first.data.map{ |dp| {ts: dp.ts, value: dp.value, temperature: dp.value } }
 	response_data.to_json
-
 end
 
 # Listener that is subscribed to MQTT broker and upon receiving a new message, writes key:value into TempoDB
@@ -74,10 +73,23 @@ end
 
 =begin
 
-# Debugging
+# To Do
+
+# 1. There are two active TempoDB databases. One tied to Heroku, the other one through website sign-up. Remove the latter.
+# (there are tow key:secret sets that are confusing)
+
+
+# Debugging Info
+
+# inspect the dataset to see if it contains content
 # dataSet.inspect => [#<TempoDB::DataSet:0x007fc474a58508 @series=#<TempoDB::Series:0x007fc474a4b998 @id="73c8843ef1ac417087c53ab359cf0237", @key="sfo/arduino/temperature/outside", @name="", @attributes={}, @tags=[]>, @start=2013-08-10 07:00:00 UTC, @stop=2013-09-23 07:00:00 UTC, @data=[#<TempoDB::DataPoint:0x007fc474a501a0 @ts=2013-09-23 05:10:00 UTC, @value=31.4>, #<TempoDB::DataPoint:0x007fc474a5aec0 @ts=2013-09-23 06:41:00 UTC, @value=31.4>, #<TempoDB::DataPoint:0x007fc474a5a1f0 @ts=2013-09-23 06:42:00 UTC, @value=31.4>, #<TempoDB::DataPoint:0x007fc474a59a70 @ts=2013-09-23 06:44:00 UTC, @value=31.4>, #<TempoDB::DataPoint:0x007fc474a592a0 @ts=2013-09-23 06:45:00 UTC, @value=31.4>], @summary=#<TempoDB::Summary:0x007fc474a59250 @sum=157.0, @mean=31.4, @max=31.4, @min=31.4, @stddev=1.7763568394002505e-15, @ss=1.262177448353619e-29, @count=5>>]
+
+# Verify if mqtt messages are being dispatched (subscribe)
 # test with mosquitto_sub -h broker.cloudmqtt.com -p *port* -t test -u *user* -P *user* (get port/user/pass from CLI: heroku config)
 # test with mosquitto_sub -h localhost -p 1883 -t test
+
+# Retrieve dataset from TempoDB through ReST API (get key/secret through CLI: heroku config):
+# test dataset: curl -u *key*:*secret* https://api.tempo-db.com/v1/series/key/sfo%2Farduino%2Ftemperature%2Finside/data/?start=2013-09-22T07%3A00%3A00.000Z&end=2013-09-23T06%3A59%3A59.000Z
 
 #publish to MQTT
 	MQTT::Client.connect(mqtt_conn_opts) do |c|
