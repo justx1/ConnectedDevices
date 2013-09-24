@@ -2,71 +2,29 @@ require 'sinatra'
 require 'tempodb'
 require 'mqtt'
 
-# Create a hash with the connection parameters from the URL
+# CloudMQTT connection parameters
+# Creates a hash with the connection parameters from the cloudmqtt URL in .env, else from the localhost URL
 uri = URI.parse ENV['CLOUDMQTT_URL'] || 'mqtt://localhost:1883'
-conn_opts = {
+mqtt_conn_opts = {
 	remote_host: uri.host,
 	remote_port: uri.port,
 	username: uri.user,
 	password: uri.password,
 }
 
-Thread.new do
-	#MQTT::Client.connect(conn_opts) do |c|
-	MQTT::Client.connect('localhost') do |c|
-		# The block will be called when you messages arrive to the topic
-		c.get('test') do |topic, message|
-			puts "#{topic}: #{message}"
-			c.publish('test', 'Fucker')
-			sleep 1
-		end
-	end
-end
+# TempoDB connection parameters from the TempoDB parameters in .env
+api_key = ENV['TEMPODB_API_KEY']
+api_secret = ENV['TEMPODB_API_SECRET']
+api_host = ENV['TEMPODB_API_HOST']
+api_port = Integer(ENV['TEMPODB_API_PORT'])
+api_secure = ENV['TEMPODB_API_SECURE'] == "False" ? false : true
 
+# Redirect to index.html that loads D3/Cubism
 get '/' do
 	"Hello, world. This is the TempoDB data API"
-	#MQTT::Client.connect(conn_opts) do |c|
-	MQTT::Client.connect('localhost') do |c|		
-		# publish a message to the topic 'test'
-		c.publish('test', 'Fucker2')
-	end
 end
 
-=begin
-get '/data/?' do
-  request_start = Time.now
-
-  # setup the Tempo client
-  api_key = ENV['TEMPODB_API_KEY']
-  api_secret = ENV['TEMPODB_API_SECRET']
-  api_host = ENV['TEMPODB_API_HOST']
-  api_port = Integer(ENV['TEMPODB_API_PORT'])
-  api_secure = ENV['TEMPODB_API_SECURE'] == "False" ? false : true
-
-  client = TempoDB::Client.new( api_key, api_secret, api_host, api_port, api_secure )
-
-  out = ""
-
-  # read all series from TempoDB for user, and track how long it takes
-  read_start = Time.now
-  series = client.get_series()
-  read_end = Time.now
-
-  # build string of JSON representation of user series
-  series.each{ |series| out += series.to_json + "<br/>"  }
-
-  request_end = Time.now
-
-  # write to TempoDB the page load speed, and series read speed
-  client.write_bulk( Time.now, [ {'key'=>'heroku-page-load-speed', 'v'=>request_end-request_start}, {'key'=>'heroku-tempodb-read-speed', 'v'=>read_end-read_start} ] )
-  out
-end
-
-
-get '/' do
-	"Hello, world1"
-end
-
+# API to provide data series to D3/Cubism
 get '/data/?' do
 	content_type :json
 
@@ -74,45 +32,58 @@ get '/data/?' do
 	return [].to_json if (params[:stop].nil? or Time.parse(params[:stop]).nil?)
 	return [].to_json if (params[:step].nil?)
 
-	# setup the Tempo client
-	api_key = ENV['TEMPODB_API_KEY']
-	api_secret = ENV['TEMPODB_API_SECRET']
-	api_host = ENV['TEMPODB_API_HOST']
-	api_port = Integer(ENV['TEMPODB_API_PORT'])
-	api_secure = ENV['TEMPODB_API_SECURE'] == "False" ? false : true
-
-	client = TempoDB::Client.new( api_key, api_secret, api_host, api_port, api_secure )
+	dataClient = TempoDB::Client.new( api_key, api_secret, api_host, api_port, api_secure )
 
 	start = Time.parse params[:start]
 	stop  = Time.parse params[:stop]
-	keys  = ["temperature"]
+	keys  = ["sfo/arduino/temperature/outside"]
 	# Calculate the correct rollup
 	step = params[:step].to_i
 	# We'll just measure it in minutes
 	step_string = "#{step/60000}min"
-	logger.info step
-	data = client.read(start, stop, keys: keys, interval: step_string, function: "mean")
-	#data = data.first.data.map{ |dp| {ts: dp.ts, value: dp.value} }
-	data = data.first.data
-	response_data = []
-	# We need to remove any inconsistencies
-	data.each_with_index do |val, index|
-		# Add this datapoint
-		response_data.push( { value: val.value } )
-		if (index + 1) < data.length
-			current_time = val.ts
-			next_time = data[index+1].ts
-			# If there is more than a 5 second difference
-			logger.info (next_time - current_time - step / 1000)
-			if((next_time - current_time - step / 1000).abs > 5)
-				# Let's add the right number of values
-				points_needed = ((next_time - current_time) / (step / 1000)).floor
-				difference = data[index+1].value - val.value
-				points_needed.times { |i| response_data.push({ value: (val.value + difference * i / points_needed.to_f) }) }
-			end
+	dataSet = dataClient.read(start, stop, keys: keys, interval: step_string, function: "mean")
+	#dataSet.inspect
+
+	 # Map the first series to temperature data points
+	 # to do: set up sfo/arduino/outside/temperature in TempoDB as location:sfo.device:arduino.exposure:outside.temperature
+	 # read TempoDB docu, as this will set attributes and tags automatically; then parse it out from dataSet generically! 
+	response_data = dataSet.first.data.map{ |dp| {ts: dp.ts, value: dp.value, temperature: dp.value } }
+	response_data.to_json
+
+end
+
+# Listener that is subscribed to MQTT broker and upon receiving a new message, writes key:value into TempoDB
+# to do: need to generically write key:value as topic:message into TempoDB
+Thread.new do
+	client1 = TempoDB::Client.new( api_key, api_secret, api_host, api_port, api_secure )
+	MQTT::Client.connect(mqtt_conn_opts) do |c|
+		# The block will be called when new messages arrive to the topic
+		c.get('#') do |topic,message|
+			puts "#{topic}: #{message}"
+			puts topic	
+			puts message
+			data = [
+				TempoDB::DataPoint.new(Time.now.utc, message.to_f)
+			]
+			client1.write_key(topic, data)
+			sleep 1
 		end
 	end
-
-	response_data.to_json
 end
+
+
+=begin
+
+# Debugging
+# dataSet.inspect => [#<TempoDB::DataSet:0x007fc474a58508 @series=#<TempoDB::Series:0x007fc474a4b998 @id="73c8843ef1ac417087c53ab359cf0237", @key="sfo/arduino/temperature/outside", @name="", @attributes={}, @tags=[]>, @start=2013-08-10 07:00:00 UTC, @stop=2013-09-23 07:00:00 UTC, @data=[#<TempoDB::DataPoint:0x007fc474a501a0 @ts=2013-09-23 05:10:00 UTC, @value=31.4>, #<TempoDB::DataPoint:0x007fc474a5aec0 @ts=2013-09-23 06:41:00 UTC, @value=31.4>, #<TempoDB::DataPoint:0x007fc474a5a1f0 @ts=2013-09-23 06:42:00 UTC, @value=31.4>, #<TempoDB::DataPoint:0x007fc474a59a70 @ts=2013-09-23 06:44:00 UTC, @value=31.4>, #<TempoDB::DataPoint:0x007fc474a592a0 @ts=2013-09-23 06:45:00 UTC, @value=31.4>], @summary=#<TempoDB::Summary:0x007fc474a59250 @sum=157.0, @mean=31.4, @max=31.4, @min=31.4, @stddev=1.7763568394002505e-15, @ss=1.262177448353619e-29, @count=5>>]
+# test with mosquitto_sub -h broker.cloudmqtt.com -p *port* -t test -u *user* -P *user* (get port/user/pass from CLI: heroku config)
+# test with mosquitto_sub -h localhost -p 1883 -t test
+
+#publish to MQTT
+	MQTT::Client.connect(mqtt_conn_opts) do |c|
+		# publish a message to the topic 'test'
+		c.publish('test', "The time is: #{Time.now}")
+	end
+
+
 =end
