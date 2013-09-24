@@ -1,12 +1,3 @@
-
-// To Do: 
-// 1. Automatic reconnect attempt of arduino client if connection to MQTT server is lost (e.g. if server restarts)
-
-
-#include <SPI.h>
-#include <PubSubClient.h>
-#include <Ethernet.h>
-
 /*
  * Temperature Reading
  *
@@ -15,27 +6,31 @@
  *
  */
 
+#include <SPI.h>
+#include <PubSubClient.h>
+#include <Ethernet.h>
+
 // Pins
-//
 const int tempPinIn = 0; // Analog 0 is the input pin
 const int ledPinOut = 9; // Analog 9 is the LED output pin
 
 // Variables
-//
 char* tempC;
 unsigned long time;
 char message_buffer[100];
 
 // Network Settings
-//
-// Set MAC address of ethernet shield. Look for it on a sticket at the bottom of the shield. Old Arduino Ethernet Shields or clones may not have a dedicated MAC address. Set any hex values here.
+// MAC address of ethernet shield
+// Look for it on a sticket at the bottom of the shield. 
+// Old Arduino Ethernet Shields or clones may not have a dedicated MAC address. Set any hex values here.
 byte MAC_ADDRESS[] = {  0xFE, 0xED, 0xDE, 0xAD, 0xBE, 0xEF };
 
-// Set IP address of MQTT server
+// IP address of MQTT server
 byte MQTT_SERVER[] = { 192, 168, 1, 115 };
+// #define MQTT_SERVER "q.sfo.example.com"
 
 // Set static IP address of Ethernet shield. Comment out for DHCP. See note below at begin(mac).
-//byte IP[]     = { 192, 168, 1, 1 };
+//byte STATIC_IP[]     = { 192, 168, 1, 1 };
 
 // defines and variable for sensor/control mode
 //#define MODE_OFF    0  // not sensing light, LED off
@@ -43,13 +38,8 @@ byte MQTT_SERVER[] = { 192, 168, 1, 115 };
 //#define MODE_SENSE  2  // sensing light, LED controlled by software
 //int senseMode = 0;
 
-//EthernetClient ethClient;
-//PubSubClient client(MQTT_SERVER, 1883, callback, ethClient);
-
-  //PubSubClient client;
-  //client = PubSubClient(MQTT_SERVER, 1883, callback);
-  EthernetClient ethClient;
-  PubSubClient client(MQTT_SERVER, 1883, callback, ethClient);
+EthernetClient ethClient;
+PubSubClient client(MQTT_SERVER, 1883, callback, ethClient);
 
 void setup()
 {
@@ -163,3 +153,8 @@ void callback(char* topic, byte* payload, unsigned int length) {
   }
   */
 }
+
+// To Do: 
+// 1. Automatic reconnect attempt of arduino client if connection to MQTT server is lost (e.g. if server restarts)
+// 2. Move to static IP instead of DHCP. Saves binary sketch space.
+// 3. Move to local domain q.sfo.*.*
