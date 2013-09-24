@@ -55,7 +55,7 @@ get '/data/?' do
 	return [].to_json if (params[:stop].nil? or Time.parse(params[:stop]).nil?)
 	return [].to_json if (params[:step].nil?)
 
-	client2 = TempoDB::Client.new( api_key, api_secret, api_host, api_port, api_secure )
+	dataClient = TempoDB::Client.new( api_key, api_secret, api_host, api_port, api_secure )
 
 	start = Time.parse params[:start]
 	stop  = Time.parse params[:stop]
@@ -64,11 +64,16 @@ get '/data/?' do
 	step = params[:step].to_i
 	# We'll just measure it in minutes
 	step_string = "#{step/60000}min"
-	data2 = client2.read(start, stop, keys: keys, interval: step_string, function: "mean")
-	data = data.first.data
-	data2.to_json
+	dataSet = dataClient.read(start, stop, keys: keys, interval: step_string, function: "mean")
+	#dataSet.inspect
+
+	 # Map the first series to temperature data points
+	response_data = dataSet.first.data.map{ |dp| {ts: dp.ts, value: dp.value, temperature: dp.value } }
+	response_data.to_json
 
 end
+
+# dataSet.inspect => [#<TempoDB::DataSet:0x007fc474a58508 @series=#<TempoDB::Series:0x007fc474a4b998 @id="73c8843ef1ac417087c53ab359cf0237", @key="sfo/arduino/temperature/outside", @name="", @attributes={}, @tags=[]>, @start=2013-08-10 07:00:00 UTC, @stop=2013-09-23 07:00:00 UTC, @data=[#<TempoDB::DataPoint:0x007fc474a501a0 @ts=2013-09-23 05:10:00 UTC, @value=31.4>, #<TempoDB::DataPoint:0x007fc474a5aec0 @ts=2013-09-23 06:41:00 UTC, @value=31.4>, #<TempoDB::DataPoint:0x007fc474a5a1f0 @ts=2013-09-23 06:42:00 UTC, @value=31.4>, #<TempoDB::DataPoint:0x007fc474a59a70 @ts=2013-09-23 06:44:00 UTC, @value=31.4>, #<TempoDB::DataPoint:0x007fc474a592a0 @ts=2013-09-23 06:45:00 UTC, @value=31.4>], @summary=#<TempoDB::Summary:0x007fc474a59250 @sum=157.0, @mean=31.4, @max=31.4, @min=31.4, @stddev=1.7763568394002505e-15, @ss=1.262177448353619e-29, @count=5>>]
 
 =begin
 
