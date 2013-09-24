@@ -62,7 +62,7 @@ void loop()
   // Publish sensor reading every X milliseconds
     if (millis() > (time + 60000)) {
       time = millis();
-      client.publish("SFO/Arduino/Inside/Temperature",tempC);
+      client.publish("sfo/arduino/inside/temperature",tempC);
     }
     
     // MQTT client loop processing
