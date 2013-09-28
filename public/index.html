@@ -14,7 +14,7 @@
 var context = cubism.context()
     .serverDelay(1 * 60 * 1000) // Allow 1 mins server delay
     .step(1 * 60 * 1000) // Every 1 mins
-    .size(1440),
+    .size(980),
     primary = temperature();
     //secondary = primary.shift(- 24 * 60 * 60 * 1000);
 
@@ -72,7 +72,7 @@ d3.select("body").selectAll(".horizon")
     .data([primary])    
   .enter().insert("div", ".bottom")
     .attr("class", "horizon")
-    .call(context.horizon().extent([10, 25])
+    .call(context.horizon().extent([0, 50])
       .title("SFO/Arduino/Inside/Temperature")
       .height(90));
 
