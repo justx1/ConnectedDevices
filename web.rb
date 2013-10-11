@@ -21,7 +21,7 @@ api_secure = ENV['TEMPODB_API_SECURE'] == "False" ? false : true
 
 # Redirect to index.html that loads D3/Cubism
 get '/' do
-	puts("index")
+	puts "index"
 	redirect '/index.html'
 end
 
@@ -55,7 +55,7 @@ end
 # Listener that is subscribed to MQTT broker and upon receiving a new message, writes key:value into TempoDB
 # to do: need to generically write key:value as topic:message into TempoDB
 Thread.new do
-	puts("thread")
+	puts "thread"
 	client1 = TempoDB::Client.new( api_key, api_secret, api_host, api_port, api_secure )
 	MQTT::Client.connect(mqtt_conn_opts) do |c|
 		# The block will be called when new messages arrive to the topic
@@ -65,7 +65,7 @@ Thread.new do
 				TempoDB::DataPoint.new(Time.now.utc, message.to_f)
 			]
 			client1.write_key(topic, data)
-			puts(message.to_f)
+			puts "loop"
 			sleep 1
 		end
 	end
