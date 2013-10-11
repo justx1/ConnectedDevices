@@ -63,6 +63,7 @@ Thread.new do
 				TempoDB::DataPoint.new(Time.now.utc, message.to_f)
 			]
 			client1.write_key(topic, data)
+			puts(message.to_f)
 			sleep 1
 		end
 	end
