@@ -21,7 +21,6 @@ api_secure = ENV['TEMPODB_API_SECURE'] == "False" ? false : true
 
 # Redirect to index.html that loads D3/Cubism
 get '/' do
-	puts "index"
 	redirect '/index.html'
 end
 
@@ -57,7 +56,13 @@ end
 Thread.new do
 	puts "thread"
 	client1 = TempoDB::Client.new( api_key, api_secret, api_host, api_port, api_secure )
-	puts "tempodb client"
+	if client1
+		begin
+			puts "tempodb client"
+		rescue
+			puts "error"
+	else
+
 	MQTT::Client.connect(mqtt_conn_opts) do |c|
 		# The block will be called when new messages arrive to the topic
 		puts "mqtt"
