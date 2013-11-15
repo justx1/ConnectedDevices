@@ -12,7 +12,6 @@
 
 // Pins
 const int tempPinIn = 0; // Analog 0 is the input pin
-const int ledPinOut = 9; // Analog 9 is the LED output pin
 
 // Variables
 char* tempC;

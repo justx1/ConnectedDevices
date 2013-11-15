@@ -68,7 +68,10 @@ Thread.new do
 		puts "mqtt"
 		c.get('#') do |topic,message|
 			# puts "#{topic}: #{message}"
+<<<<<<< HEAD
 			puts "msg received"
+=======
+>>>>>>> brunch
 			data = [
 				TempoDB::DataPoint.new(Time.now.utc, message.to_f)
 			]
