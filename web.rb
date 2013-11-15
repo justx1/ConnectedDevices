@@ -51,37 +51,6 @@ get '/data/?' do
 	response_data.to_json
 end
 
-# Listener that is subscribed to MQTT broker and upon receiving a new message, writes key:value into TempoDB
-# to do: need to generically write key:value as topic:message into TempoDB
-Thread.new do
-	puts "thread"
-	client1 = TempoDB::Client.new( api_key, api_secret, api_host, api_port, api_secure )
-	if client1
-		begin
-			puts "tempodb client"
-		rescue
-			puts "error"
-	else
-
-	MQTT::Client.connect(mqtt_conn_opts) do |c|
-		# The block will be called when new messages arrive to the topic
-		puts "mqtt"
-		c.get('#') do |topic,message|
-			# puts "#{topic}: #{message}"
-<<<<<<< HEAD
-			puts "msg received"
-=======
->>>>>>> brunch
-			data = [
-				TempoDB::DataPoint.new(Time.now.utc, message.to_f)
-			]
-			client1.write_key(topic, data)
-			puts "data written"
-			sleep 1
-		end
-	end
-end
-
 
 =begin
 
