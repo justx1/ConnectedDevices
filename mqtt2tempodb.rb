@@ -20,7 +20,7 @@ api_secure = ENV['TEMPODB_API_SECURE'] == "False" ? false : true
 
 # Listener that is subscribed to MQTT broker and upon receiving a new message, writes key:value into TempoDB
 # to do: need to generically write key:value as topic:message into TempoDB
-Thread.new do
+#Thread.new do
         client = TempoDB::Client.new( api_key, api_secret, api_host, api_port, api_secure )
         MQTT::Client.connect(mqtt_conn_opts) do |c|
                 # The block will be called when new messages arrive to the topic
@@ -33,4 +33,4 @@ Thread.new do
                         sleep 1
                 end
         end
-end
+#end
